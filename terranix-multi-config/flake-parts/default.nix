@@ -93,11 +93,83 @@
         # return to the original directory
         popd
       '';
+
+    # push the current configuration to terraform cloud
+    # this is useful for doing API-driven terraform runs
+    # https://developer.hashicorp.com/terraform/cloud-docs/run/api#pushing-a-new-configuration-version
+    push-configuration = let
+      jq = "${pkgs.jq}/bin/jq";
+      curl = "${pkgs.curl}/bin/curl";
+      terraform-cli = "${terraform}/bin/terraform";
+    in
+      pkgs.writeShellScriptBin "tfcloud-push" ''
+        set -euo pipefail
+        # accept the configuration name as the first argument
+        # use it to add a -chdir=''${configurationPath} argument to the terraform command
+
+        # get the configuration name
+        configurationName="$1"
+        shift
+
+        # organization name (from env)
+        : ''${TF_ORG?"TF_ORG must be set"}
+        # tfcloud token (from env)
+        : ''${TF_TOKEN?"TF_TOKEN must be set"}
+
+        # navigate to the top-level directory before executing the terraform command
+        pushd $(git rev-parse --show-toplevel)
+
+        # determine the path to the configuration
+        configurationPath=$(cat ${self'.packages.terraformConfigurationMatrix}/terraform-configuration-matrix.json | ${jq} -r '.configurations[] | select(.name == "'$configurationName'" ) | .path')
+
+        # create a symlink, config.tf.json to the configuration's path
+        ln -sf "$configurationPath" ./terraform/configurations/$configurationName/generated_config.tf.json
+
+        # determine the active workspace
+        workspace=$(${terraform-cli} -chdir=./terraform/configurations/$configurationName workspace show)
+
+        # package the configuration's directory into a tarball
+        file_name="./content-$(date +%s).tar.gz"
+        tar -zcvf $file_name -C ./terraform/configurations/$configurationName .
+
+        # lookup the workspace id
+        workspace_id=($(curl \
+          --header "Authorization: Bearer $TF_TOKEN" \
+          --header "Content-Type: application/vnd.api+json" \
+          https://app.terraform.io/api/v2/organizations/$TF_ORG/workspaces/''$workspace \
+          | ${jq} -r '.data.id'))
+
+        # create a new configuration version
+        echo '{"data":{"type":"configuration-versions"}}' > ./create_config_version.json
+        upload_url=($(curl \
+          --header "Authorization: Bearer $TF_TOKEN" \
+          --header "Content-Type: application/vnd.api+json" \
+          --request POST \
+          --data @create_config_version.json \
+          https://app.terraform.io/api/v2/workspaces/$workspace_id/configuration-versions \
+          | ${jq} -r '.data.attributes."upload-url"'))
+
+        # finally, upload the configuration content to the newly created configuration version
+        curl \
+          --header "Content-Type: application/octet-stream" \
+          --request PUT \
+          --data-binary @"$file_name" \
+          $upload_url
+
+        ### cleanup
+
+        # remove the symlink
+        rm ./terraform/configurations/$configurationName/generated_config.tf.json
+
+        # return to the original directory
+        popd
+      '';
   in rec {
     devShells.default = pkgs.mkShell {
       buildInputs = [
         terraform
         terraform-command
+        push-configuration
       ];
       inherit (self.checks.${system}.pre-commit-hooks) shellHook;
     };
