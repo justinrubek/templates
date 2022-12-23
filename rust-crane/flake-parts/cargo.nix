@@ -49,6 +49,11 @@
       }
       // common-build-args);
 
+    rust-fmt-check = craneLib.cargoFmt ({
+        inherit (common-build-args) src;
+      }
+      // common-build-args);
+
     tests-check = craneLib.cargoNextest ({
         cargoArtifacts = deps-only;
         partitions = 1;
@@ -114,6 +119,7 @@
       inherit pre-commit-hooks;
       clippy = clippy-check;
       tests = tests-check;
+      rust-fmt = rust-fmt-check;
     };
   };
 }
