@@ -112,9 +112,11 @@
         shift
 
         # organization name (from env)
-        : ''${TF_ORG?"TF_ORG must be set"}
+        : ''${TFE_ORG?"TF_ORG must be set"}
         # tfcloud token (from env)
-        : ''${TF_TOKEN?"TF_TOKEN must be set"}
+        : ''${TFE_TOKEN?"TF_TOKEN must be set"}
+        # tfcloud url (from env, defaults to app.terraform.io)
+        : ''${TFE_URL:="app.terraform.io"}
 
         # navigate to the top-level directory before executing the terraform command
         pushd $(git rev-parse --show-toplevel)
@@ -136,8 +138,8 @@
         workspace_id=($(curl \
           --header "Authorization: Bearer $TF_TOKEN" \
           --header "Content-Type: application/vnd.api+json" \
-          https://app.terraform.io/api/v2/organizations/$TF_ORG/workspaces/''$workspace \
-          | ${jq} -r '.data.id'))
+          https://$TFE_URL/api/v2/organizations/$TF_ORG/workspaces/''$workspace \
+          | ${jq} -r '.data.id'))t
 
         # create a new configuration version
         echo '{"data":{"type":"configuration-versions"}}' > ./create_config_version.json
@@ -146,7 +148,7 @@
           --header "Content-Type: application/vnd.api+json" \
           --request POST \
           --data @create_config_version.json \
-          https://app.terraform.io/api/v2/workspaces/$workspace_id/configuration-versions \
+          https://$TFE_URL/api/v2/workspaces/$workspace_id/configuration-versions \
           | ${jq} -r '.data.attributes."upload-url"'))
 
         # finally, upload the configuration content to the newly created configuration version
@@ -228,13 +230,13 @@
       # output a the available terraform configurations
       generateTerraformMatrix = {
         type = "app";
-        program = "${generate-matrix-names}/bin/generate-terraform-matrix";
+        program = pkgs.lib.getExe generate-matrix-names;
       };
 
       # run a terraform command within one of the configurations
       tnix = {
         type = "app";
-        program = "${terraform-command}/bin/tnix";
+        program = pkgs.lib.getExe terraform-command;
       };
     };
   };
