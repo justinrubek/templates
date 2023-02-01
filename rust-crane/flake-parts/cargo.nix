@@ -12,6 +12,25 @@
     inputs',
     ...
   }: let
+    devTools = [
+      # rust tooling
+      fenix-toolchain
+      pkgs.bacon
+      # version control
+      pkgs.cocogitto
+      inputs'.bomper.packages.cli
+      # misc
+    ];
+
+    extraBuildInputs = [
+      pkgs.pkg-config
+    ];
+    extraNativeBuildInputs = [
+    ];
+
+    allBuildInputs = base: base ++ extraBuildInputs;
+    allNativeBuildInputs = base: base ++ extraNativeBuildInputs;
+
     fenix-channel = inputs'.fenix.packages.latest;
     fenix-toolchain = fenix-channel.withComponents [
       "rustc"
@@ -35,6 +54,7 @@
         ];
       };
 
+      # TODO: change the name to reflect the project
       pname = "rust-crane";
 
       buildInputs = allBuildInputs [];
@@ -43,28 +63,31 @@
     };
     deps-only = craneLib.buildDepsOnly ({} // common-build-args);
 
-    clippy-check = craneLib.cargoClippy ({
-        cargoArtifacts = deps-only;
-        cargoClippyExtraArgs = "--all-features -- --deny warnings";
-      }
-      // common-build-args);
+    checks = {
+      clippy = craneLib.cargoClippy ({
+          cargoArtifacts = deps-only;
+          cargoClippyExtraArgs = "--all-features -- --deny warnings";
+        }
+        // common-build-args);
 
-    rust-fmt-check = craneLib.cargoFmt ({
+      rust-fmt = craneLib.cargoFmt ({
+          inherit (common-build-args) src;
+        }
+        // common-build-args);
+
+      rust-tests = craneLib.cargoNextest ({
+          cargoArtifacts = deps-only;
+          partitions = 1;
+          partitionType = "count";
+        }
+        // common-build-args);
+
+      pre-commit-hooks = inputs.pre-commit-hooks.lib.${system}.run {
         inherit (common-build-args) src;
-      }
-      // common-build-args);
-
-    tests-check = craneLib.cargoNextest ({
-        cargoArtifacts = deps-only;
-        partitions = 1;
-        partitionType = "count";
-      }
-      // common-build-args);
-
-    pre-commit-hooks = inputs.pre-commit-hooks.lib.${system}.run {
-      inherit (common-build-args) src;
-      hooks = {
-        alejandra.enable = true;
+        hooks = {
+          alejandra.enable = true;
+          rustfmt.enable = true;
+        };
       };
     };
 
@@ -74,37 +97,17 @@
         cargoExtraArgs = "--bin cli";
       }
       // common-build-args);
-
-    devTools = with pkgs; [
-      # rust tooling
-      fenix-toolchain
-      bacon
-      rustfmt
-      # version control
-      cocogitto
-      inputs'.bomper.packages.cli
-      # misc
-    ];
-
-    extraBuildInputs = [
-      pkgs.pkg-config
-    ];
-    extraNativeBuildInputs = [
-    ];
-
-    allBuildInputs = base: base ++ extraBuildInputs;
-    allNativeBuildInputs = base: base ++ extraNativeBuildInputs;
   in rec {
     devShells.default = pkgs.mkShell rec {
-      buildInputs = allBuildInputs [fenix-toolchain] ++ devTools;
-      nativeBuildInputs = allNativeBuildInputs [];
-      LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
+      packages = allBuildInputs (allNativeBuildInputs devTools);
+      LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath packages;
       inherit (self.checks.${system}.pre-commit-hooks) shellHook;
     };
 
     packages = {
       default = packages.cli;
       cli = cli-package;
+      rust-toolchain = fenix-toolchain;
     };
 
     apps = {
@@ -115,11 +118,6 @@
       default = apps.cli;
     };
 
-    checks = {
-      inherit pre-commit-hooks;
-      clippy = clippy-check;
-      tests = tests-check;
-      rust-fmt = rust-fmt-check;
-    };
+    inherit checks;
   };
 }
