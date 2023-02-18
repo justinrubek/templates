@@ -62,6 +62,11 @@
           meta.mainProgram = "cli";
         }
         // common-build-args);
+
+      cargo-doc = craneLib.cargoDoc ({
+          cargoArtifacts = deps-only;
+        }
+        // common-build-args);
     };
 
     checks = {
