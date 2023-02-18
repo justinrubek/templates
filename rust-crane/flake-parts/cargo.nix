@@ -6,15 +6,19 @@
   imports = [];
 
   perSystem = {
+    config,
     pkgs,
     lib,
     system,
     inputs',
+    self',
     ...
   }: let
     devTools = [
       # rust tooling
-      fenix-toolchain
+      self'.packages.rust-toolchain
+      pkgs.cargo-audit
+      pkgs.cargo-udeps
       pkgs.bacon
       # version control
       pkgs.cocogitto
@@ -22,27 +26,13 @@
       # misc
     ];
 
-    extraBuildInputs = [
+    # packages required for building the rust packages
+    extraPackages = [
       pkgs.pkg-config
     ];
-    extraNativeBuildInputs = [
-    ];
+    withExtraPackages = base: base ++ extraPackages;
 
-    allBuildInputs = base: base ++ extraBuildInputs;
-    allNativeBuildInputs = base: base ++ extraNativeBuildInputs;
-
-    fenix-channel = inputs'.fenix.packages.latest;
-    fenix-toolchain = fenix-channel.withComponents [
-      "rustc"
-      "cargo"
-      "clippy"
-      "rust-analysis"
-      "rust-src"
-      "rustfmt"
-      "llvm-tools-preview"
-    ];
-
-    craneLib = inputs.crane.lib.${system}.overrideToolchain fenix-toolchain;
+    craneLib = inputs.crane.lib.${system}.overrideToolchain self'.packages.rust-toolchain;
 
     common-build-args = rec {
       src = inputs.nix-filter.lib {
@@ -57,11 +47,22 @@
       # TODO: change the name to reflect the project
       pname = "rust-crane";
 
-      buildInputs = allBuildInputs [];
-      nativeBuildInputs = allNativeBuildInputs [];
-      LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
+      nativeBuildInputs = withExtraPackages [];
+      LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath nativeBuildInputs;
     };
+
     deps-only = craneLib.buildDepsOnly ({} // common-build-args);
+
+    packages = {
+      default = packages.cli;
+      cli = craneLib.buildPackage ({
+          pname = "cli";
+          cargoArtifacts = deps-only;
+          cargoExtraArgs = "--bin cli";
+          meta.mainProgram = "cli";
+        }
+        // common-build-args);
+    };
 
     checks = {
       clippy = craneLib.cargoClippy ({
@@ -81,43 +82,25 @@
           partitionType = "count";
         }
         // common-build-args);
-
-      pre-commit-hooks = inputs.pre-commit-hooks.lib.${system}.run {
-        inherit (common-build-args) src;
-        hooks = {
-          alejandra.enable = true;
-          rustfmt.enable = true;
-        };
-      };
     };
-
-    cli-package = craneLib.buildPackage ({
-        pname = "cli";
-        cargoArtifacts = deps-only;
-        cargoExtraArgs = "--bin cli";
-      }
-      // common-build-args);
   in rec {
-    devShells.default = pkgs.mkShell rec {
-      packages = allBuildInputs (allNativeBuildInputs devTools);
-      LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath packages;
-      inherit (self.checks.${system}.pre-commit-hooks) shellHook;
-    };
+    inherit packages checks;
 
-    packages = {
-      default = packages.cli;
-      cli = cli-package;
-      rust-toolchain = fenix-toolchain;
+    devShells.default = pkgs.mkShell rec {
+      packages = withExtraPackages devTools;
+      LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath packages;
+
+      shellHook = ''
+        ${config.pre-commit.installationScript}
+      '';
     };
 
     apps = {
       cli = {
         type = "app";
-        program = "${self.packages.${system}.cli}/bin/cli";
+        program = pkgs.lib.getBin self'.packages.cli;
       };
       default = apps.cli;
     };
-
-    inherit checks;
   };
 }
