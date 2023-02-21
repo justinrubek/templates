@@ -24,7 +24,11 @@
       flake.templates = {
         rust-crane = {
           path = ./rust-crane;
-          description = "rust using crane and fenix for building";
+          description = "rust workspace using crane and fenix for building. includes a cli crate with clap";
+        };
+        rust-lib-crate = {
+          path = ./rust-lib-crate;
+          description = "individual rust library crate";
         };
         terranix-multi-config = {
           path = ./terranix-multi-config;
