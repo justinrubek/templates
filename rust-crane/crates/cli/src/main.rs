@@ -1,10 +1,14 @@
-use crate::commands::{Commands, HelloCommands};
+use crate::{
+    commands::{Commands, HelloCommands},
+    error::Result,
+};
 
 mod commands;
+mod error;
 
 use clap::Parser;
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
     let args = commands::Args::parse();
@@ -24,4 +28,3 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-
