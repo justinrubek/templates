@@ -1,14 +1,7 @@
-{
-  inputs,
-  self,
-  ...
-} @ part-inputs: {
-  imports = [];
-
+{inputs, ...}: {
   perSystem = {
     config,
     pkgs,
-    lib,
     system,
     inputs',
     self',

@@ -1,17 +1,5 @@
-{
-  inputs,
-  self,
-  ...
-} @ part-inputs: {
-  imports = [];
-
-  perSystem = {
-    pkgs,
-    lib,
-    system,
-    inputs',
-    ...
-  }: let
+{...}: {
+  perSystem = {inputs', ...}: let
     fenix-channel = inputs'.fenix.packages.latest;
     fenix-toolchain = fenix-channel.withComponents [
       "rustc"
