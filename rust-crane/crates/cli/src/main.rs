@@ -2,11 +2,11 @@ use crate::{
     commands::{Commands, HelloCommands},
     error::Result,
 };
+use clap::Parser;
 
 mod commands;
 mod error;
 
-use clap::Parser;
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
