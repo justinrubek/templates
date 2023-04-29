@@ -11,15 +11,10 @@
       settings = {
         src = ../.;
         hooks = {
-          treefmt = {
-            enable = true;
-            name = "treefmt";
-            description = "format the code";
-            types = ["file"];
-            pass_filenames = true;
-            entry = "${self'.packages.treefmt}/bin/treefmt";
-          };
+          treefmt.enable = true;
         };
+
+        settings.treefmt.package = self'.packages.treefmt;
       };
     };
   };
