@@ -13,15 +13,11 @@
       pkgs.rustfmt
     ];
 
-    # wrap treefmt to provide the correct PATH with all formatters
-    treefmt = pkgs.stdenv.mkDerivation {
+    treefmt = pkgs.writeShellApplication {
       name = "treefmt";
-      buildInputs = [pkgs.makeWrapper];
-      buildCommand = ''
-        makeWrapper \
-          ${pkgs.treefmt}/bin/treefmt \
-          $out/bin/treefmt \
-          --prefix PATH : ${lib.makeBinPath formatters}
+      runtimeInputs = [pkgs.treefmt] ++ formatters;
+      text = ''
+        exec treefmt "$@"
       '';
     };
   in {
