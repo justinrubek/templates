@@ -1,13 +1,13 @@
 [package]
 # TODO: change the name
 name = "crate-lib"
-version.workspace = true
-edition.workspace = true
+version = { workspace = true }
+edition = { workspace = true }
 
 [dependencies]
-anyhow.workspace = true
-# serde.workspace = true
+anyhow = { workspace = true }
+# serde = { workspace = true }
 # serde_json = "1.0.87"
-thiserror.workspace = true
-tokio.workspace = true
-tracing.workspace = true
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
