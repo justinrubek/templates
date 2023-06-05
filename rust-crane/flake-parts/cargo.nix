@@ -12,6 +12,7 @@
       self'.packages.rust-toolchain
       pkgs.cargo-audit
       pkgs.cargo-udeps
+      pkgs.cargo-nextest
       pkgs.bacon
       # version control
       pkgs.cocogitto
@@ -86,21 +87,16 @@
   in rec {
     inherit packages checks;
 
-    devShells.default = pkgs.mkShell rec {
-      packages = withExtraPackages devTools;
-      LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath packages;
-
-      shellHook = ''
-        ${config.pre-commit.installationScript}
-      '';
-    };
-
     apps = {
       cli = {
         type = "app";
         program = pkgs.lib.getBin self'.packages.cli;
       };
       default = apps.cli;
+    };
+
+    legacyPackages = {
+      cargoExtraPackages = extraPackages;
     };
   };
 }
