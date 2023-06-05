@@ -16,7 +16,6 @@
       pkgs.cargo-audit
       pkgs.cargo-udeps
       pkgs.bacon
-      pkgs.wasm-bindgen-cli
       # formatting
       self'.packages.treefmt
       # misc
