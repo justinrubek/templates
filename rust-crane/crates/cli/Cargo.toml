@@ -1,14 +1,20 @@
-[package]
-name = "cli"
-version = { workspace = true }
-edition = { workspace = true }
-
 [dependencies]
-anyhow = { workspace = true }
-clap = { version = "4.0.19", features = ["derive"] }
+clap = { version = "4", features = ["derive"] }
 # serde = { workspace = true }
 # serde_json = { workspace = true }
-tokio = { workspace = true, features = ["full"] }
 thiserror = { workspace = true }
+# tokio = { workspace = true, features = ["full"] }
 tracing = { workspace = true }
-tracing-subscriber = "0.3.16"
+tracing-subscriber = { workspace = true }
+
+[lints]
+workspace = true
+
+[package]
+name = "cli"
+authors = { workspace = true }
+edition = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
+version = { workspace = true }

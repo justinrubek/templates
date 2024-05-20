@@ -1,20 +1,20 @@
-{
-  inputs,
-  self,
-  ...
-}: {
-  perSystem = {self', ...}: let
-  in {
+{inputs, ...}: {
+  imports = [
+    inputs.pre-commit-hooks.flakeModule
+  ];
+  perSystem = {self', ...}: {
     pre-commit = {
       check.enable = true;
 
       settings = {
-        src = ../.;
         hooks = {
-          treefmt.enable = true;
+          statix.enable = true;
+          treefmt = {
+            enable = true;
+            package = self'.packages.treefmt;
+          };
         };
-
-        settings.treefmt.package = self'.packages.treefmt;
+        src = ../.;
       };
     };
   };

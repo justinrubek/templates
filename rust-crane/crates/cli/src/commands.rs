@@ -23,4 +23,5 @@ pub(crate) enum HelloCommands {
         #[arg()]
         name: String,
     },
+    Error,
 }

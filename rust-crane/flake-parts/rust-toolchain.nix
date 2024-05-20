@@ -1,4 +1,4 @@
-{...}: {
+_: {
   perSystem = {inputs', ...}: let
     # "stable", "latest", "minimal", "complete"
     channel = "latest";
@@ -20,7 +20,7 @@
         fenix-channel.llvm-tools-preview
       ]
       ++ fenix-targets);
-  in rec {
+  in {
     packages = {
       rust-toolchain = fenix-toolchain;
     };

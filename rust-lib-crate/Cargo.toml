@@ -1,13 +1,19 @@
+[dependencies]
+# serde = { workspace = true }
+# serde_json = { workspace = true }
+thiserror = { workspace = true }
+# tokio = { workspace = true }
+tracing = { workspace = true }
+
+[lints]
+workspace = true
+
 [package]
 # TODO: change the name
 name = "crate-lib"
 version = { workspace = true }
 edition = { workspace = true }
-
-[dependencies]
-anyhow = { workspace = true }
-# serde = { workspace = true }
-# serde_json = "1.0.87"
-thiserror = { workspace = true }
-tokio = { workspace = true }
-tracing = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
+homepage = { workspace = true }
+authors = { workspace = true }

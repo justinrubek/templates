@@ -24,9 +24,5 @@
     packages = {
       inherit treefmt;
     };
-
-    legacyPackages = {
-      inherit formatters;
-    };
   };
 }

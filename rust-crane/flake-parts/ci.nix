@@ -1,34 +1,27 @@
 {inputs, ...}: {
+  imports = [
+    inputs.bomper.flakeModules.bomper
+  ];
   perSystem = {
     config,
     pkgs,
-    system,
-    inputs',
     self',
     ...
-  }: let
-    ciPackages = [
-      self'.packages.cocogitto
-      self'.packages.bomper
-    ];
-
-    packages = {
-      cocogitto = pkgs.cocogitto;
-      bomper = inputs'.bomper.packages.cli;
+  }: {
+    bomper = {
+      enable = true;
+      configuration = ''
+        (
+            cargo: Some(Autodetect),
+            authors: Some({
+                "Justin Rubek": "justinrubek"
+            }),
+        )
+      '';
     };
-
-    devShells = {
-      ci = pkgs.mkShell rec {
-        packages = ciPackages;
-
-        LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath packages;
-      };
-    };
-  in rec {
-    inherit devShells packages;
-
-    legacyPackages = {
-      inherit ciPackages;
+    devShells.ci = pkgs.mkShell rec {
+      packages = [config.bomper.wrappedBomper];
+      LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath packages;
     };
   };
 }

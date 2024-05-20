@@ -7,8 +7,7 @@ use clap::Parser;
 mod commands;
 mod error;
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
     let args = commands::Args::parse();
@@ -20,7 +19,10 @@ async fn main() -> Result<()> {
                     println!("Hello, world!");
                 }
                 HelloCommands::Name { name } => {
-                    println!("Hello, {}!", name);
+                    println!("Hello, {name}!");
+                }
+                HelloCommands::Error => {
+                    Err(crate::error::Error::Other("error".into()))?;
                 }
             }
         }
